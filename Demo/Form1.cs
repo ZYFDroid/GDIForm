@@ -24,11 +24,14 @@ namespace Demo
         StringFormat centerF = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         public override void onInit(Graphics g)
         {
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             ShowFPS = true;
 
             using (Graphics gt = Graphics.FromImage(secondPan)) {
                 gt.SmoothingMode = SmoothingMode.AntiAlias;
+
+                gt.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
                 gt.Clear(Color.Transparent);
                 RectangleF region = new RectangleF(440, 240, 64, 22);
                 gt.ResetTransform();
@@ -47,6 +50,7 @@ namespace Demo
             using (Graphics gt = Graphics.FromImage(minutePan))
             {
                 gt.SmoothingMode = SmoothingMode.AntiAlias;
+                gt.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
                 gt.Clear(Color.Transparent);
                 RectangleF region = new RectangleF(380, 240, 64, 22);
                 gt.ResetTransform();
@@ -66,6 +70,7 @@ namespace Demo
             {
                 gt.SmoothingMode = SmoothingMode.AntiAlias;
                 gt.Clear(Color.Transparent);
+                gt.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
                 RectangleF region = new RectangleF(320, 240, 64, 22);
                 gt.ResetTransform();
 
@@ -90,6 +95,11 @@ namespace Demo
                 gt.DrawRectangle(thinPen, region);
                 
             }
+
+            hourPan.Save("hour.png");
+            minutePan.Save("minute.png");
+            secondPan.Save("second.png");
+            mask.Save("mask.png");
         }
 
         String fitTo4(String instr) {

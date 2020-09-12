@@ -13,6 +13,9 @@ using System.Windows.Forms;
 
 namespace GDIForm
 {
+    /// <summary>
+    /// GDI window base class
+    /// </summary>
     public partial class GDIForm : Form
     {
         Form GdiLayer = null;
@@ -23,9 +26,9 @@ namespace GDIForm
         /// the resolution should only be change in designer or constructor method
         /// </summary>
         public Size Resolution {
-            get {
-                this.Width = _resolution.Width + (this.Width - ClientRectangle.Width);
-                this.Height = _resolution.Height + (this.Height - ClientRectangle.Height);
+            get
+            {
+                this.Size = SizeFromClientSize(_resolution);
                 return _resolution;
             }
             set {
@@ -33,12 +36,13 @@ namespace GDIForm
                     throw new InvalidOperationException();
                 }
                 _resolution = value;
-                this.Width =value.Width+ (this.Width - ClientRectangle.Width);
-                this.Height =value.Height + (this.Height - ClientRectangle.Height);
+                this.Size = SizeFromClientSize(_resolution);
                 if (GdiLayer == null) { return; }
                 GdiLayer.Size = value;
             }
         }
+
+        
 
         bool canChangeResolution = true;
 
@@ -48,7 +52,7 @@ namespace GDIForm
         public GDIForm()
         {
             InitializeComponent();
-            
+            this.Size = SizeFromClientSize(_resolution);
         }
 
         private void GDIForm_Move(object sender, EventArgs e)
@@ -86,6 +90,7 @@ namespace GDIForm
         {
             if (!DesignMode)
             {
+                beforeInit();
                 GdiLayer = new Form()
                 {
                     Location = PointToScreen(DrawingBase.DisplayRectangle.Location),
@@ -98,6 +103,7 @@ namespace GDIForm
             }
             if (!DesignMode)
             {
+                
                 GdiLayer.Visible = false;
                 GdiLayer.Show(this);
                 gdi = new GdiSystem(GdiLayer);
@@ -176,25 +182,33 @@ namespace GDIForm
 
         }
     }
-
-    internal class GdiSystem : IDisposable
+    /// <summary>
+    /// Layered Window operates
+    /// </summary>
+    public class GdiSystem : IDisposable
     {
         Form thisWindow;
 
         /// <summary>
-        /// 在FormLoad中调用这个方法
+        /// Convert a form to LayeredWindow
+        /// call this in Load event
         /// </summary>
         /// <param name="attachForm"></param>
-        public GdiSystem(Form attachForm)
+        ///  <param name="operateable">indicates whether the window will process input events.</param>
+        public GdiSystem(Form attachForm,bool operateable = false)
         {
             thisWindow = attachForm;
             if (attachForm.Handle != IntPtr.Zero)
             {
-                Win32.SetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE, Win32.GetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE)|Win32.WS_EX_LAYERED | Win32.WS_EX_TRANSPARENT);
+                Win32.SetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE, Win32.GetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE)|Win32.WS_EX_LAYERED);
+                if (!operateable)
+                {
+                    Win32.SetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE, Win32.GetWindowLong(attachForm.Handle, Win32.GWL_EXSTYLE) | Win32.WS_EX_TRANSPARENT);
+                }
             }
             else
             {
-                throw new AccessViolationException("窗口没有初始化");
+                throw new AccessViolationException("Window not initialized.");
             }
             oldBits = IntPtr.Zero;
             screenDC = Win32.GetDC(IntPtr.Zero);
@@ -217,10 +231,8 @@ namespace GDIForm
 
         }
         /// <summary>
-        /// 获取一个可以绘制的画布对象，在上面绘制窗体内容
+        /// Get a Graphic object.
         /// </summary>
-        /// <param name="clearGraphics"></param>
-        /// <returns></returns>
         public Graphics Graphics
         {
             get
@@ -229,7 +241,7 @@ namespace GDIForm
             }
         }
         /// <summary>
-        /// 画完之后提交绘制内容
+        /// Apply content after paint on the Graphic
         /// </summary>
         public void UpdateWindow()
         {
@@ -249,7 +261,6 @@ namespace GDIForm
         IntPtr graphicDC;
         private void SetBits(Bitmap bitmap)
         {
-
             if (!Bitmap.IsCanonicalPixelFormat(bitmap.PixelFormat) || !Bitmap.IsAlphaPixelFormat(bitmap.PixelFormat))
                 throw new ApplicationException("The picture must be 32bit picture with alpha channel.");
             try
@@ -259,18 +270,14 @@ namespace GDIForm
                 hBitmap = thisBitmap.GetHbitmap(Color.FromArgb(0));
                 oldBits = Win32.SelectObject(memDc, hBitmap);
                 Win32.BitBlt(memDc, 0, 0, bitMapSize.cx, bitMapSize.cy, graphicDC, 0, 0, 0x00CC0020);
-
                 Win32.UpdateLayeredWindow(thisWindow.Handle, screenDC, ref topLoc, ref bitMapSize, memDc, ref srcLoc, 0, ref blendFunc, Win32.ULW_ALPHA);
             }
             finally
             {
-
-
                 if (hBitmap != IntPtr.Zero)
                 {
                     Win32.SelectObject(memDc, oldBits);
                     Win32.DeleteObject(hBitmap);
-
                 }
             }
         }
@@ -286,7 +293,7 @@ namespace GDIForm
         private Graphics thisGraphics;
 
 
-        public class Win32
+        class Win32
         {
             [StructLayout(LayoutKind.Sequential)]
             public struct Size
@@ -376,6 +383,9 @@ namespace GDIForm
         }
     }
 
+    /// <summary>
+    /// Some method to draw images
+    /// </summary>
     public class DrawUtils
     {
         #region drawAlphaImage

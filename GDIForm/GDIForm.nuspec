@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+	<id>GDIForm</id>
+    <version>1.0.0.1</version>
+    <authors>ZYFDroid</authors>
+    <owners>ZYFDroid</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/ZYFDroid/GDIForm</projectUrl>
+    <description>High-performance GDI window application framework</description>
+    <releaseNotes>Small fix</releaseNotes>
+    <copyright> </copyright>
+    <tags>GDI WinForm</tags>
+  </metadata>
+</package>
